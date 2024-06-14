@@ -11,6 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
+	"github.com/go-playground/validator/v10"
 	"github.com/junanda/shortenerUrl/pkg/model"
 	"github.com/junanda/shortenerUrl/utils"
 )
@@ -30,6 +31,15 @@ func Handler(request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResp
 	if err != nil {
 		utils.PrintError("Error parsing body data", err)
 		return utils.ApiResponse(http.StatusBadRequest, "Invalid request body")
+	}
+
+	//validate data request
+	validate := validator.New()
+	err = validate.Struct(dataRequest)
+	if err != nil {
+		errors := err.(validator.ValidationErrors)
+		utils.PrintError("Validate Request data:", errors)
+		return utils.ApiResponse(http.StatusBadRequest, errors)
 	}
 
 	sess := session.Must(session.NewSession())
