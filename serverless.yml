@@ -1,0 +1,252 @@
+app: aws-golang-short-url
+service: aws-golang-short-url
+
+frameworkVersion: ">=4.1.0"
+
+provider:
+  name: aws
+  runtime: provided.al2023
+  stage: ${opt:stage}
+  region: ap-southeast-1
+  environment:
+    JWT_SECRET: "csdlkngslinywlknaf"
+    SQS_QUEUE_URL: "https://sqs.<region>.amazonaws.com/<YOUR_ID_AWSAMAZON>/recoveryPassword"
+    EMAIL_SENDER: "sample@gmail.com"
+    EMAIL_PASSWORD: "your_email_pass"
+    SMTP_HOST: "smtp.gmail.com"
+    SMTP_PORT: "587"
+  
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:GetItem
+            - dynamobd:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+          Resource:
+            - "arn:aws:dynamodb:ap-southeast-1:*:table/member"
+            - "arn:aws:dynamodb:ap-southeast-1:*:table/shorturl"
+            - "arn:aws:dynamodb:ap-southeast-1:*:table/analytics"
+        - Effect: Allow
+          Action:
+            - "sqs:SendMessage"
+            - "sqs:ReceiveMessage"
+            - "sqs:DeleteMessage"
+            - "sqs:GetQueueAttributes"
+          Resource:
+            - "arn:aws:sqs:ap-southeast-1:*:recoveryPassword"
+
+package:
+  individually: true
+
+constructs:
+  mu-queue:
+    type: queue
+    worker:
+      handler: boostrap
+      package:
+        artifact: bin/consumer/bootstrap.zip
+      events:
+        - sqs:
+            arn: arn:aws:sqs:ap-southeast-1:*:recoveryPassword
+            batchSize: 10
+            enabled: true
+
+functions:
+  varify-token:
+    handler: bootstrap
+    package:
+      artifact: bin/authentication/bootstrap.zip
+
+  register:
+    handler: bootstrap
+    package:
+      artifact: bin/register/bootstrap.zip
+    events:
+      - http:
+          path: users
+          method: post
+  
+  login:
+    handler: bootstrap
+    package:
+      artifact: bin/login/bootstrap.zip
+    events:
+      - http:
+          path: login
+          method: post
+  
+  redirecturl:
+    handler: bootstrap
+    package:
+      artifact: bin/redirecturl/bootstrap.zip
+    events:
+      - http:
+          path: re.ly/{url}
+          method: get
+    
+  recoverpass:
+    handler: bootstrap
+    package:
+      artifact: bin/passrecovery/bootstrap.zip
+    events:
+      - http:
+          path: recover
+          method: post
+
+  # consumer:
+  #   handler: bootstrap
+  #   package:
+  #     artifact: bin/consumer/bootstrap.zip
+  #   events:
+  #     - sqs:
+  #         arn: arn:aws:sqs:ap-southeast-1:*:recoveryPassword
+  
+  shorturl:
+    handler: bootstrap
+    package:
+      artifact: bin/shorturl/bootstrap.zip
+    events:
+      - http:
+          path: short
+          method: post
+          authorizer:
+            name: varify-token
+            resultTtlInSeconds: 3600
+  
+  get:
+    handler: bootstrap
+    package:
+      artifact: bin/getuser/bootstrap.zip
+    events:
+      - http:
+          path: users/{id}
+          method: get
+          authorizer:
+            name: varify-token
+            resultTtlInSeconds: 3600
+  
+  list:
+    handler: bootstrap
+    package:
+      artifact: bin/listuser/bootstrap.zip
+    events:
+      - http:
+          path: users
+          method: get
+          authorizer:
+            name: varify-token
+            resultTtlInSeconds: 3600
+  
+  update:
+    handler: bootstrap
+    package:
+      artifact: bin/updateuser/bootstrap.zip
+    events:
+      - http:
+          path: users
+          method: put
+          authorizer:
+            name: varify-token
+            resultTtlInSeconds: 3600
+  
+  delete:
+    handler: bootstrap
+    package:
+      artifact: bin/deleteuser/bootstrap.zip
+    events:
+      - http:
+          path: users/{id}
+          method: delete
+          authorizer:
+            name: varify-token
+            resultTtlInSeconds: 3600
+  
+  trackbyurl:
+    handler: bootstrap
+    package:
+      artifact: bin/trackbyurl/bootstrap.zip
+    events:
+      - http:
+          path: trackurl/short/{url}
+          method: get
+          authorizer:
+            name: varify-token
+            resultTtlInSeconds: 3600
+  
+  trackbyuser:
+    handler: bootstrap
+    package:
+      artifact: bin/trackbyuser/bootstrap.zip
+    events:
+      - http:
+          path: trackurl/user/{id}
+          method: get
+          authorizer:
+            name: varify-token
+            resultTtlInSeconds: 3600
+
+resources:
+  Resources:
+    MemberTable:
+      Type: 'AWS::DynamoDB::Table'
+      Properties:
+        TableName: member
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+          - AttributeName: username
+            AttributeType: S
+          - AttributeName: email
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+
+    ShortUrlTable:
+      Type: 'AWS::DynamoDB::Table'
+      Properties:
+        TableName: shorturl
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+          - AttributeName: short_url
+            AttributeType: S
+          - AttributeName: iduser
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+    
+    AnalyticsTable:
+      Type: 'AWS::DynamoDB::Table'
+      Properties:
+        TableName: analytics
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+          - AttributeName: idshort
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+    
+    recoveryPassword:
+      Type: "AWS::SQS::Queue"
+      Properties:
+        QueueName: "recoveryPassword"
+
+
