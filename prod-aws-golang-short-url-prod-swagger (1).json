@@ -1,0 +1,138 @@
+{
+  "swagger" : "2.0",
+  "info" : {
+    "version" : "2024-06-13T12:03:31Z",
+    "title" : "prod-aws-golang-short-url"
+  },
+  "host" : "oyaso15cne.execute-api.ap-southeast-1.amazonaws.com",
+  "basePath" : "/prod",
+  "schemes" : [ "https" ],
+  "paths" : {
+    "/aws-golang-short-url-prod-register" : {
+      "x-amazon-apigateway-any-method" : {
+        "responses" : {
+          "200" : {
+            "description" : "200 response"
+          }
+        },
+        "security" : [ {
+          "sigv4" : [ ]
+        } ]
+      }
+    },
+    "/login" : {
+      "post" : {
+        "responses" : { }
+      }
+    },
+    "/re.ly/{url}" : {
+      "get" : {
+        "parameters" : [ {
+          "name" : "url",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        } ],
+        "responses" : { }
+      }
+    },
+    "/recover" : {
+      "post" : {
+        "responses" : { }
+      }
+    },
+    "/short" : {
+      "post" : {
+        "responses" : { },
+        "security" : [ {
+          "varify-token" : [ ]
+        } ]
+      }
+    },
+    "/trackurl/short/{url}" : {
+      "get" : {
+        "parameters" : [ {
+          "name" : "url",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        } ],
+        "responses" : { },
+        "security" : [ {
+          "varify-token" : [ ]
+        } ]
+      }
+    },
+    "/trackurl/user/{id}" : {
+      "get" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        } ],
+        "responses" : { },
+        "security" : [ {
+          "varify-token" : [ ]
+        } ]
+      }
+    },
+    "/users" : {
+      "get" : {
+        "responses" : { },
+        "security" : [ {
+          "varify-token" : [ ]
+        } ]
+      },
+      "post" : {
+        "responses" : { }
+      },
+      "put" : {
+        "responses" : { },
+        "security" : [ {
+          "varify-token" : [ ]
+        } ]
+      }
+    },
+    "/users/{id}" : {
+      "get" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        } ],
+        "responses" : { },
+        "security" : [ {
+          "varify-token" : [ ]
+        } ]
+      },
+      "delete" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        } ],
+        "responses" : { },
+        "security" : [ {
+          "varify-token" : [ ]
+        } ]
+      }
+    }
+  },
+  "securityDefinitions" : {
+    "sigv4" : {
+      "type" : "apiKey",
+      "name" : "Authorization",
+      "in" : "header",
+      "x-amazon-apigateway-authtype" : "awsSigv4"
+    },
+    "varify-token" : {
+      "type" : "apiKey",
+      "name" : "Authorization",
+      "in" : "header",
+      "x-amazon-apigateway-authtype" : "custom"
+    }
+  }
+}
