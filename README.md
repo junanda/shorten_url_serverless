@@ -28,6 +28,7 @@ This service provides a URL shortening feature, built using Golang and the Serve
 2. **Lambda Functions** execute the logic for user management, authentication, authorization, and URL shortening.
 3. **DynamoDB** stores all the data related to users and shortened URLs.
 4. **SQS** is used for handling asynchronous tasks that can be processed independently of the main application flow.
+
 ![alt text](short_url.gif)
 
 ## Usage
